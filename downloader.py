@@ -19,6 +19,10 @@ class VideoDownloader():
         Logger.init()
 
         working_directory = os.path.dirname(os.path.abspath(__file__))
+
+        if not os.path.exists(f'{working_directory}/data'):
+            os.makedirs(f'{working_directory}/data')
+
         urls_file = 'data/urls.txt'
         urls = self._fetch_urls_from_decks()
         Logger.info(f'Found {len(urls)} urls')
@@ -80,8 +84,7 @@ class UrlListWriter():
 
         writer.close()
 
-
-https: // www.reddit.com/r/Anki/comments/a6u2he/adding_background_image/
+# https: // www.reddit.com/r/Anki/comments/a6u2he/adding_background_image/
 
 
 class UrlFinder():
@@ -100,7 +103,7 @@ class UrlFinder():
             items = note.items()
 
             for item in items:
-                Logger.info(f'{item[0]}')
+                #Logger.info(f'{item[0]}')
                 if item[0] == 'Youtube#1':
                     all_urls.append(f'https://youtu.be/{item[1]}')
                 else:

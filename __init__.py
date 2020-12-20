@@ -20,27 +20,23 @@ class SettingsDialog(QDialog):
 
         self.layout = QVBoxLayout()
 
-        description = QLabel('Video Downloader:')
-        self.layout.addWidget(description)
-        self.layout.addWidget(QLabel('All urls are gathered and downloaded'))
+        #description = QLabel('Video Downloader:')
+        #self.layout.addWidget(description)
+        #self.layout.addWidget(QLabel('All urls are gathered and downloaded'))
 
-        output_path_label = QLabel('Output path')
-        self.layout.addWidget(output_path_label)
+        #output_path_label = QLabel('Output path')
+        #self.layout.addWidget(output_path_label)
 
-        self._output_path = QLineEdit(self)
-        self._output_path.setText("c:/temp/")
-        self.layout.addWidget(self._output_path)
+        #self._output_path = QLineEdit(self)
+        #self._output_path.setText("c:/temp/")
+        #self.layout.addWidget(self._output_path)
 
         self.layout.addWidget(self.button_box)
         self.setLayout(self.layout)
 
     def _start(self):
-
         downloader = VideoDownloader()
         downloader.start()
-
-        #downloader = VideoDownloader()
-        # downloader.start()
 
         self.accept()
 

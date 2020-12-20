@@ -22,9 +22,11 @@ class MyLogger(object):
         print(message)
 
 
-def my_hook(d):
-    if d['status'] == 'finished':
+def my_hook(data):
+    if data['status'] == 'finished':
         print('Done downloading, now converting ...')
+		
+	#print(f'filename: {data['filename']})
 
 
 class UrlListReader():
@@ -39,10 +41,19 @@ class UrlListReader():
         for line in Lines:
             urls.append(line)
             # print("Line{}: {}".format(count, line.strip()))
-
+			
         return urls
 
-
+"""
+--format (bestvideo[ext=mp4][height<=720][fps<30]/bestvideo[ext=mp4][height<=720]/bestvideo[ext=mp4][height>=1080]/bestvideo)+(bestaudio[ext=m4a]/bestaudio)/best
+--download-archive archive.txt
+--output %(playlist_uploader)s-%(playlist_title)s/%(autonumber)s.%(title)s.%(id)s.%(ext)s
+--merge-output-format mp4
+--restrict-filenames
+--ignore-errors
+--write-description
+https://github.com/ytdl-org/youtube-dl/blob/master/youtube_dl/YoutubeDL.py#L128-L278
+"""
 class VideoDownloader():
     def __init__(self):
         pass
@@ -53,20 +64,20 @@ class VideoDownloader():
         print(f'Found {len(urls)} urls')
 
         ydl_opts = {
-            'format': 'bestaudio/best',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
+            'format': '(bestvideo[ext=mp4][height<=720][fps<30]/bestvideo[ext=mp4][height<=720]/bestvideo[ext=mp4][height>=1080]/bestvideo)+(bestaudio[ext=m4a]/bestaudio)/best',
+            'merge_output_format':'mp4',
+			'download_archive': './data/archive.txt',
             'logger': MyLogger(),
             'progress_hooks': [my_hook],
             'ignoreerrors': True,
-            'simulate': True,
-            'outtmpl': './videos/%(uploader)s/%(title)s-%(upload_date)s-%(id)s.%(ext)s'
+            #'simulate': True,
+            'outtmpl': './videos/%(uploader)s-%(title)s-%(upload_date)s-%(id)s.%(ext)s',
+			'writedescription': True,
+			'restrictfilenames': True,
+			'quiet': True
         }
-        # with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        #    ydl.download(urls)
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            ydl.download(urls)
 
 
 def main():
