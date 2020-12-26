@@ -29,8 +29,8 @@ class VideoDownloader():
         self._save_urls(
             filename=f'{working_directory}/{urls_file}', urls=urls)
         Logger.info(f'Wrote urls to {working_directory}/{urls_file}')
-        self._download_videos(
-            working_directory=working_directory, filename=urls_file)
+        # self._download_videos(
+        #    working_directory=working_directory, filename=urls_file)
 
         Logger.close()
 
@@ -103,9 +103,13 @@ class UrlFinder():
             items = note.items()
 
             for item in items:
-                #Logger.info(f'{item[0]}')
-                if item[0] == 'Youtube#1':
-                    all_urls.append(f'https://youtu.be/{item[1]}')
+
+                if item[0] == 'YoutubeUrls':
+                    urls = self._extract_urls_from_youtubeurls(item[1])
+                    if urls:
+                        for url in urls:
+                            all_urls.append(f'https://youtu.be/{url}')
+
                 else:
                     tag_content = item[1]
 
@@ -115,3 +119,19 @@ class UrlFinder():
                         all_urls.append(link.get('href'))
 
         return all_urls
+
+    def _extract_urls_from_youtubeurls(self, content):
+
+        if content:
+            urls = []
+
+            entries = content.split('|')
+
+            for entry in entries:
+                values = entry.split(';')
+                Logger.info(f'Found {values[0]} with description')
+                urls.append(values[0])
+
+            return urls
+
+        return None
