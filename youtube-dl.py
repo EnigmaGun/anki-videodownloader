@@ -1,7 +1,9 @@
 from __future__ import unicode_literals
+import os
 import youtube_dl
 import getopt
 import sys
+
 '''
 This is basically just a wrapper for youtube-dl as it is quite hard to
 use custom packages with Anki.
@@ -25,24 +27,25 @@ class MyLogger(object):
 def my_hook(data):
     if data['status'] == 'finished':
         print('Done downloading, now converting ...')
-		
-	#print(f'filename: {data['filename']})
+
+        # print(f'filename: {data['filename']})
 
 
 class UrlListReader():
 
     def read(self, filename):
         urls = []
-        file1 = open(filename, 'r')
-        Lines = file1.readlines()
+        file = open(filename, 'r')
+        lines = file.readlines()
 
         count = 0
         # Strips the newline character
-        for line in Lines:
+        for line in lines:
             urls.append(line)
             # print("Line{}: {}".format(count, line.strip()))
-			
+
         return urls
+
 
 """
 --format (bestvideo[ext=mp4][height<=720][fps<30]/bestvideo[ext=mp4][height<=720]/bestvideo[ext=mp4][height>=1080]/bestvideo)+(bestaudio[ext=m4a]/bestaudio)/best
@@ -54,38 +57,47 @@ class UrlListReader():
 --write-description
 https://github.com/ytdl-org/youtube-dl/blob/master/youtube_dl/YoutubeDL.py#L128-L278
 """
+
+
 class VideoDownloader():
     def __init__(self):
         pass
 
-    def start(self, urlfile):
+    def start(self, urlfile, deck_id):
 
         urls = UrlListReader().read(urlfile)
         print(f'Found {len(urls)} urls')
 
+        out_directory = f'./videos/{deck_id}'
+        if not os.path.exists(out_directory):
+            os.makedirs(out_directory)
+
         ydl_opts = {
             'format': '(bestvideo[ext=mp4][height<=720][fps<30]/bestvideo[ext=mp4][height<=720]/bestvideo[ext=mp4][height>=1080]/bestvideo)+(bestaudio[ext=m4a]/bestaudio)/best',
-            'merge_output_format':'mp4',
-			'download_archive': './data/archive.txt',
+            'merge_output_format': 'mp4',
+            'download_archive': f'./data/archive_{deck_id}.txt',
             'logger': MyLogger(),
             'progress_hooks': [my_hook],
             'ignoreerrors': True,
-            #'simulate': True,
-            'outtmpl': './videos/%(uploader)s-%(title)s-%(upload_date)s-%(id)s.%(ext)s',
-			'writedescription': True,
-			'restrictfilenames': True,
-			'quiet': True
+            # 'simulate': True,
+            'outtmpl': f'{out_directory}/%(uploader)s-%(title)s-%(upload_date)s-%(id)s.%(ext)s',
+            'writedescription': True,
+            'restrictfilenames': True,
+            'quiet': True
         }
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             ydl.download(urls)
 
 
 def main():
+
     full_cmd_arguments = sys.argv
     args = full_cmd_arguments[1:]
 
     downloader = VideoDownloader()
-    downloader.start(urlfile=args[0])
+    downloader.start(urlfile=args[0],
+                     deck_id=args[1]
+                     )
 
 
 if __name__ == '__main__':

@@ -1,19 +1,17 @@
-
 import os
 
 
 class Logger():
 
     @staticmethod
-    def init():
+    def init(filename='log.txt'):
 
         LOG_PATH = os.path.dirname(os.path.abspath(__file__)) + "/logs"
-        FILE_NAME = 'log.txt'
 
         if not os.path.exists(LOG_PATH):
             os.makedirs(LOG_PATH)
 
-        Logger.logger = open(f"{LOG_PATH}/{FILE_NAME}", "w+")
+        Logger.logger = open(f"{LOG_PATH}/{filename}", "w+")
 
     @staticmethod
     def info(message):

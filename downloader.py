@@ -1,12 +1,9 @@
 from aqt import mw
 # import the "show info" tool from utils.py
 
-import json
-import re
 import os
 import subprocess
 from bs4 import BeautifulSoup
-
 from .logger import Logger
 
 
@@ -23,53 +20,37 @@ class VideoDownloader():
         if not os.path.exists(f'{working_directory}/data'):
             os.makedirs(f'{working_directory}/data')
 
-        urls_file = 'data/urls.txt'
-        urls = self._fetch_urls_from_decks()
-        Logger.info(f'Found {len(urls)} urls')
-        self._save_urls(
-            filename=f'{working_directory}/{urls_file}', urls=urls)
-        Logger.info(f'Wrote urls to {working_directory}/{urls_file}')
-        # self._download_videos(
-        #    working_directory=working_directory, filename=urls_file)
+        decks = ['Magie', 'Tricksqueue', 'Import']
+
+        for deck_name in decks:
+            deck_id = deck_name.lower()
+
+            urls_file = f'data/urls_{deck_id}.txt'
+
+            urls = self._fetch_urls_from_deck(deck_name)
+            Logger.info(f'Found {len(urls)} urls in deck {deck_name}')
+            self._save_urls(
+                filename=f'{working_directory}/{urls_file}', urls=urls)
+            Logger.info(f'Wrote urls to {working_directory}/{urls_file}')
+
+            self._download_videos(
+                working_directory=working_directory, filename=urls_file, deck_id=deck_id)
 
         Logger.close()
 
-        # fetching all urls from the decks
-        # write them to the urls list
-        # start youtube-dl
-
-        # subprocess.run(
-        #    ['c:/windows/system32/Notepad.exe', 'C:/Users/berkal.XATRONIC/AppData\Roaming/Anki2/addons21/my_first_addon/urls.txt'])
-        '''
-        with open('C:/Users/berkal.XATRONIC/AppData/Roaming/Anki2/addons21/anki-videodownloader/out.txt', 'w+') as fout:
-            with open('C:/Users/berkal.XATRONIC/AppData/Roaming/Anki2/addons21/anki-videodownloader/err.txt', 'w+') as ferr:
-                out = subprocess.run(['python',
-                                      './downloader.py',
-                                      'urls3.txt'],
-                                     cwd="C:/Users/berkal.XATRONIC/AppData/Roaming/Anki2/addons21/anki-videodownloader/",
-                                     stdout=fout, stderr=ferr)
-                # reset file to read from it
-                fout.seek(0)
-                # save output (if any) in variable
-                output = fout.read()
-
-                # reset file to read from it
-                ferr.seek(0)
-                # save errors (if any) in variable
-                errors = ferr.read()
-
-        '''
-
-    def _fetch_urls_from_decks(self):
-        return UrlFinder().find()
+    def _fetch_urls_from_deck(self, deck_name):
+        return UrlFinder().find(deck_name)
 
     def _save_urls(self, filename, urls):
         UrlListWriter().write(filename, urls)
 
-    def _download_videos(self, working_directory, filename):
+    def _download_videos(self, working_directory, filename, deck_id):
+
+        Logger.info(f'filename {filename} deck_id {deck_id}')
+
         subprocess.run(['python',
                         './youtube-dl.py',
-                        f'{filename}'],
+                        filename, deck_id],
                        cwd=working_directory)
 
 
@@ -91,11 +72,13 @@ class UrlFinder():
     def __init__(self):
         pass
 
-    def find(self):
+    def find(self, deck_name):
 
-        all_urls = []
+        all_urls = set()  # []
 
-        note_ids = mw.col.findNotes("")
+        deckfilter = ""
+        deckfilter = f"deck:{deck_name}"
+        note_ids = mw.col.findNotes(deckfilter)
 
         for (index, note_id) in enumerate(note_ids):
             note = mw.col.getNote(note_id)
@@ -108,7 +91,14 @@ class UrlFinder():
                     urls = self._extract_urls_from_youtubeurls(item[1])
                     if urls:
                         for url in urls:
-                            all_urls.append(f'https://youtu.be/{url}')
+                            youtube_url = f'https://youtu.be/{url}'
+                            if youtube_url not in all_urls:
+                                all_urls.add(youtube_url)
+                                Logger.info(f'Added {youtube_url}')
+                            else:
+                                Logger.info(f'Skipping {youtube_url}')
+
+                            # all_urls.append()
 
                 else:
                     tag_content = item[1]
@@ -116,7 +106,11 @@ class UrlFinder():
                     soup = BeautifulSoup(tag_content, 'html.parser')
 
                     for link in soup.find_all('a'):
-                        all_urls.append(link.get('href'))
+                        url = link.get('href')
+
+                        if url not in all_urls:
+                            all_urls.add(url)
+                        # all_urls.append(link.get('href'))
 
         return all_urls
 
@@ -129,7 +123,6 @@ class UrlFinder():
 
             for entry in entries:
                 values = entry.split(';')
-                Logger.info(f'Found {values[0]} with description')
                 urls.append(values[0])
 
             return urls
