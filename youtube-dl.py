@@ -64,7 +64,6 @@ class VideoDownloader():
         pass
 
     def start(self, urlfile, deck_id):
-
         urls = UrlListReader().read(urlfile)
         print(f'Found {len(urls)} urls')
 
@@ -79,11 +78,13 @@ class VideoDownloader():
             'logger': MyLogger(),
             'progress_hooks': [my_hook],
             'ignoreerrors': True,
-            # 'simulate': True,
+			'source_address':'0.0.0.0',
+            #'simulate': True,
             'outtmpl': f'{out_directory}/%(uploader)s-%(title)s-%(upload_date)s-%(id)s.%(ext)s',
             'writedescription': True,
             'restrictfilenames': True,
-            'quiet': True
+            'quiet': True,
+			#'verbose': True
         }
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             ydl.download(urls)

@@ -2,6 +2,7 @@ from aqt import mw
 # import the "show info" tool from utils.py
 
 import os
+import re
 import subprocess
 from bs4 import BeautifulSoup
 from .logger import Logger
@@ -21,6 +22,8 @@ class VideoDownloader():
             os.makedirs(f'{working_directory}/data')
 
         decks = ['Magie', 'Tricksqueue', 'Import']
+        #decks = ['Magie']
+        #decks = ['Import']
 
         for deck_name in decks:
             deck_id = deck_name.lower()
@@ -98,21 +101,54 @@ class ArchiveReader():
 
         return urls
 
+class UrlsList():
+
+    def __init__(self, archived_urls):
+        self._all_urls = set()  # []
+        self._archived_urls = archived_urls
+
+    def add_youtube_id(self,  id, items):
+        youtube_url = f'https://youtu.be/{id}'
+                            
+        if url in self._archived_urls:
+            Logger.info(f'Skipping {youtube_url}, already downloaded')
+        elif youtube_url in self._all_urls:
+            Logger.info(f'Skipping {youtube_url}, duplicate entry')  
+        else:
+            self._all_urls.add(youtube_url)
+            Logger.info(f'Added {youtube_url} NoteId {items[0][1]}')
+    
+    def get_urls(self):
+        return self._all_urls
+
 class UrlFinder():
     def __init__(self):
         pass
 
     def find(self, deck_name, archived_urls):
 
-        all_urls = set()  # []
+        new_video_urls = set()  # []
+
+        #all_urls_list = UrlsList(archived_urls)
 
         deckfilter = ""
         deckfilter = f"deck:{deck_name}"
         note_ids = mw.col.findNotes(deckfilter)
+
+        def should_download(video_id):
+            if video_id in archived_urls:
+                Logger.info(f'Skipping {video_id}, already downloaded')
+                return False
+            elif video_id in new_video_urls:
+                Logger.info(f'Skipping {video_id}, duplicate entry')  
+                return False
+        
+            return True
+
         
         for (index, note_id) in enumerate(note_ids):
             note = mw.col.getNote(note_id)
-
+            
             items = note.items()
 
             for item in items:
@@ -121,23 +157,47 @@ class UrlFinder():
                     urls = self._extract_urls_from_youtubeurls(item[1])
                     if urls:
                         for url in urls:
-                            url = url.split('?')[0] # strip url parameters
-                            youtube_url = f'https://youtu.be/{url}'
+                            video_id = url.split('?')[0] # strip url parameters
+                            #all_urls_list.add_youtube_id(id, items)
                             
-                            if url in archived_urls:
+                            if should_download(video_id):
+                                youtube_url = f'https://youtu.be/{video_id}'    
+                                new_video_urls.add(youtube_url)
+                                Logger.info(f'Added {youtube_url} NoteId {items[0][1]}')
+                            '''
+                            youtube_url = f'https://youtu.be/{video_id}'
+                            
+                            if video_id in archived_urls:
                                 Logger.info(f'Skipping {youtube_url}, already downloaded')
                             elif youtube_url in all_urls:
                                 Logger.info(f'Skipping {youtube_url}, duplicate entry')  
                             else:
                                 all_urls.add(youtube_url)
-                                Logger.info(f'Added {youtube_url}')
+                                Logger.info(f'Added {youtube_url} NoteId {items[0][1]}')
                                 
-
+                            '''
                             # all_urls.append()
+                            
 
                 else:
                     tag_content = item[1]
+                    youtube_ids = self._get_youtube_ids_from_string(tag_content)
 
+                    for video_id in youtube_ids:
+                        #all_urls_list.add_youtube_id(id, items)
+                        
+                        youtube_url = f'https://youtu.be/{video_id}'
+                            
+                        if video_id in archived_urls:
+                            Logger.info(f'Skipping {youtube_url}, already downloaded')
+                        elif youtube_url in new_video_urls:
+                            Logger.info(f'Skipping {youtube_url}, duplicate entry')  
+                        else:
+                            new_video_urls.add(youtube_url)
+                            Logger.info(f'Added {youtube_url} NoteId {items[0][1]}')
+                        
+                    
+                    '''
                     soup = BeautifulSoup(tag_content, 'html.parser')
 
                     for link in soup.find_all('a'):
@@ -146,14 +206,18 @@ class UrlFinder():
                         if url not in all_urls:
                             all_urls.add(url)
                         # all_urls.append(link.get('href'))
+                    '''
 
-        return all_urls
+        return new_video_urls #all_urls_list.get_urls() # 
 
     def _extract_urls_from_youtubeurls(self, content):
 
         if content:
             urls = []
-            cleaned = content.replace("\n", " ")
+
+            cleanr = re.compile('<.*?>')
+            cleaned = re.sub(cleanr, '', content)
+            cleaned = cleaned.replace("\n", "")
             entries = cleaned.split('|')
 
             for entry in entries:
@@ -163,6 +227,27 @@ class UrlFinder():
             return urls
 
         return None
+    
+    def _get_youtube_ids_from_string(self, string):
+        
+        urls = self._get_urls_from_string(string)
+        
+        youtube_ids = []
+        
+        for url in urls:
+            if url.startswith('https://youtu.be/'):
+                youtube_ids.append(url.replace('https://youtu.be/','')) 
+
+        return youtube_ids
+
+    def _get_urls_from_string(self, string): 
+        # findall() has been used  
+        # with valid conditions for urls in string 
+        regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
+        urls = re.findall(regex,string)       
+        
+        return [x[0] for x in urls] 
+
 '''
 class UrlListChecker():
 

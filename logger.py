@@ -11,7 +11,7 @@ class Logger():
         if not os.path.exists(LOG_PATH):
             os.makedirs(LOG_PATH)
 
-        Logger.logger = open(f"{LOG_PATH}/{filename}", "w+")
+        Logger.logger = open(f"{LOG_PATH}/{filename}", "w+", encoding="utf-8")
 
     @staticmethod
     def info(message):
