@@ -21,11 +21,14 @@ class VideoDownloader():
         if not os.path.exists(f'{working_directory}/data'):
             os.makedirs(f'{working_directory}/data')
 
-        decks = ['Magie', 'Tricksqueue', 'Import']
+        #decks = ['Magie', 'Tricksqueue', 'Import']
         #decks = ['Magie']
         #decks = ['Import']
+        
+        deck_names = ['Magic']
+        deck_names = sorted(mw.col.decks.allNames())
 
-        for deck_name in decks:
+        for deck_name in deck_names:
             deck_id = deck_name.lower()
 
             urls_file = f'data/urls_{deck_id}.txt'
@@ -81,7 +84,6 @@ class UrlListWriter():
 
 # https: // www.reddit.com/r/Anki/comments/a6u2he/adding_background_image/
 
-
 class ArchiveReader():
 
     def read(self, working_directory, deck_name):
@@ -89,15 +91,18 @@ class ArchiveReader():
         deck_id = deck_name.lower()
         filename = f'{working_directory}/data/archive_{deck_id}.txt'
         
-        file = open(filename, 'r')
-        lines = file.readlines()
+        if os.path.exists(filename):
+            file = open(filename, 'r')
+            lines = file.readlines()
 
-        # Strips the newline character
-        for line in lines:
-            youtube_id = line.split(' ')[1]
-            print(youtube_id)
-            urls.append(youtube_id)
-            # print("Line{}: {}".format(count, line.strip()))
+            # Strips the newline character
+            for line in lines:
+                youtube_id = line.split(' ')[1]
+                print(youtube_id)
+                urls.append(youtube_id)
+                # print("Line{}: {}".format(count, line.strip()))
+        else:
+            Logger.info(f'No archive file for {deck_id} found.')
 
         return urls
 

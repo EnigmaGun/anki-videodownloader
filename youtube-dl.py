@@ -84,7 +84,12 @@ class VideoDownloader():
             'writedescription': True,
             'restrictfilenames': True,
             'quiet': True,
-			#'verbose': True
+			'verbose': False,
+            'writesubtitles': True,
+            'subtitleslangs': ['de','en'],
+            'writeautomaticsub': True,
+            'writethumbnail': True
+
         }
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             ydl.download(urls)
